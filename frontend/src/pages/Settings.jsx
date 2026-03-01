@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import TopNavbar from '../components/TopNavbar';
 import DashboardLayout from '../components/DashboardLayout';
 import { useUser } from '../context/UserContext';
+import { Navigate } from 'react-router-dom';
 import {
     User,
     Bell,
@@ -14,16 +15,33 @@ import {
 } from 'lucide-react';
 
 export default function Settings() {
-    const { user, updateUser } = useUser();
+    const { user, updateUserLocal, loading } = useUser();
     const [profile, setProfile] = useState({
-        name: user.name,
-        email: user.email
+        name: '',
+        email: ''
     });
 
     const [threshold, setThreshold] = useState(65);
 
+    useEffect(() => {
+        if (user) {
+            setProfile({
+                name: user.full_name || user.username || '',
+                email: user.email || ''
+            });
+        }
+    }, [user]);
+
+    if (loading) {
+        return <DashboardLayout><div className="flex-1 flex items-center justify-center pt-24"><div className="w-12 h-12 border-4 border-[#7c5ff4]/20 border-t-[#7c5ff4] rounded-full animate-spin"></div></div></DashboardLayout>;
+    }
+
+    if (!user) {
+        return <Navigate to="/" />;
+    }
+
     const handleSave = () => {
-        updateUser(profile);
+        updateUserLocal(profile);
     };
 
     return (

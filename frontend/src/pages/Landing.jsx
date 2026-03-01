@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { GoogleLogin } from '@react-oauth/google';
 import {
     Users,
     HeartPulse,
@@ -10,23 +11,49 @@ import {
     Lock,
     EyeOff,
     ArrowRight,
-    ShieldCheck
+    ShieldCheck,
+    Briefcase
 } from 'lucide-react';
 
 export default function Landing() {
-    const { updateUser } = useUser();
+    const { login, signup, googleLogin } = useUser();
     const navigate = useNavigate();
-    const [email, setEmail] = useState('');
+    const [isSignup, setIsSignup] = useState(false);
 
-    const handleLogin = (e) => {
-        // e.preventDefault(); // If it was a form
-        if (email) {
-            const namePart = email.split('@')[0];
-            const capitalizedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-            updateUser({ email, name: capitalizedName });
+    // Form state
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        password: ''
+    });
+
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e) => {
+        setError('');
+        let result;
+        if (isSignup) {
+            result = await signup(formData.username, formData.email, formData.password);
+        } else {
+            result = await login(formData.email, formData.password);
         }
-        navigate('/dashboard');
+
+        if (result.success) {
+            navigate('/dashboard');
+        } else {
+            setError(result.message);
+        }
     };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        const result = await googleLogin(credentialResponse.credential);
+        if (result.success) {
+            navigate('/dashboard');
+        } else {
+            setError(result.message);
+        }
+    };
+
     return (
         <div className="h-screen w-full relative overflow-hidden font-sans selection:bg-[#A388FF]/30 select-none">
             {/* Background Image */}
@@ -40,192 +67,135 @@ export default function Landing() {
                 }}
             />
 
-            {/* Navigation */}
-            <nav className="relative z-20 flex items-center justify-between px-12 py-4">
+            <nav className="relative z-10 px-12 py-8 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
-                        <span className="text-white font-bold text-lg italic">A</span>
+                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
+                        <span className="text-white font-bold text-xl italic">A</span>
                     </div>
-                    <div>
-                        <h1 className="text-white font-bold text-xl tracking-tight leading-none">AURA Connect</h1>
-                        <p className="text-white/60 text-[10px] font-medium tracking-wide mt-0.5 uppercase">Relationship Intelligence Platform</p>
-                    </div>
+                    <span className="text-white font-bold text-2xl tracking-tight">AURA Connect</span>
                 </div>
-
-                <div className="hidden md:flex items-center gap-10">
-                    <a href="#" className="text-white/80 hover:text-white transition-colors font-medium text-sm">Home</a>
+                <div className="flex items-center gap-8">
                     <a href="#" className="text-white/80 hover:text-white transition-colors font-medium text-sm">Features</a>
                     <a href="#" className="text-white/80 hover:text-white transition-colors font-medium text-sm">Pricing</a>
                     <a href="#" className="text-white/80 hover:text-white transition-colors font-medium text-sm">About</a>
                     <button
-                        onClick={handleLogin}
+                        onClick={() => navigate('/dashboard')}
                         className="bg-white text-gray-900 px-5 py-2 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-[0_8px_20px_rgba(255,255,255,0.15)] text-sm"
                     >
-                        Log In
+                        Demo Access
                     </button>
                 </div>
             </nav>
 
-            <main className="relative z-10 grid grid-cols-12 h-[calc(100vh-80px)] px-12 items-center gap-8">
-
-                {/* Left Content - Takes up 7 cols */}
-                <div className="col-span-7 flex flex-col justify-center">
-                    <h2 className="text-gray-900 text-5xl xl:text-6xl font-extrabold leading-[1.1] mb-6 tracking-tight drop-shadow-sm">
-                        Master Your Relationships. <br />
-                        AI-Powered Intelligence for <br />
-                        Stronger Connections.
-                    </h2>
-
-                    <p className="text-gray-800 text-base font-medium leading-relaxed mb-10 max-w-xl opacity-90">
-                        AURA tracks relationship health, predicts weakening bonds, and guides you to nurture connections with personalized insights.
+            <main className="relative z-10 px-12 h-[calc(100vh-120px)] flex items-center justify-between gap-8">
+                <div className="max-w-4xl">
+                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 mb-6">
+                        <Activity size={16} className="text-[#A388FF]" />
+                        <span className="text-white/90 text-xs font-bold tracking-widest uppercase">v2.0 Beta Now Live</span>
+                    </div>
+                    <h1 className="text-7xl font-black text-white leading-[1] mb-8 tracking-tighter">
+                        AI-Powered <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#A388FF] to-[#FF8EDC]">Relationship</span> <br /> Intelligence.
+                    </h1>
+                    <p className="text-xl text-white/70 leading-relaxed mb-6 font-medium max-w-3xl">
+                        AURA Connect utilizes advanced neural processing to decode the subtle nuances of your digital interactions.
+                        We help you stay ahead of the curve by identifying high-priority follow-ups and suggesting the optimal moments
+                        to reconnect with those who matter most.
                     </p>
 
-                    <div className="grid grid-cols-2 gap-y-10 gap-x-4 mb-12">
-                        {/* Feature 1 */}
-                        <div className="flex gap-4 items-center h-16">
-                            <div className="w-12 h-12 bg-white/40 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/50 shadow-sm shrink-0">
-                                <Users className="text-gray-900" size={24} />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-gray-900 text-[13px] uppercase tracking-wide mb-0.5 flex items-center gap-2">
-                                    1. Track Contacts <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></div>
-                                </h4>
-                                <p className="text-gray-800 font-medium text-sm leading-tight">Manage your entire <br />network</p>
-                            </div>
-                        </div>
-
-                        {/* Feature 2 */}
-                        <div className="flex gap-4 items-center h-16">
-                            <div className="w-12 h-12 bg-emerald-400/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-emerald-400/30 shadow-sm shrink-0">
-                                <HeartPulse className="text-emerald-600" size={24} />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-gray-900 text-[13px] uppercase tracking-wide mb-0.5">
-                                    2. Relationship Health
-                                </h4>
-                                <p className="text-gray-800 font-medium text-sm leading-tight">AI analyzes interaction <br />quality & frequency</p>
-                            </div>
-                        </div>
-
-                        {/* Feature 3 */}
-                        <div className="flex gap-4 items-center h-16">
-                            <div className="w-12 h-12 bg-rose-400/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-rose-400/30 shadow-sm shrink-0">
-                                <Activity className="text-rose-500" size={24} />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-gray-900 text-[13px] uppercase tracking-wide mb-0.5">
-                                    3. Predict Bond Strength
-                                </h4>
-                                <p className="text-gray-800 font-medium text-sm leading-tight">Anticipate drift and re- <br />engage effectively</p>
-                            </div>
-                        </div>
-
-                        {/* Feature 4 */}
-                        <div className="flex gap-4 items-center h-16">
-                            <div className="w-12 h-12 bg-white/40 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/50 shadow-sm shrink-0">
-                                <CalendarDays className="text-gray-900" size={24} />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-gray-900 text-[13px] uppercase tracking-wide mb-0.5">
-                                    4. Reminders & Pipelines
-                                </h4>
-                                <p className="text-gray-800 font-medium text-sm leading-tight">Organize follow-ups and <br />interaction history</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                        <Link
-                            to="/dashboard"
-                            className="bg-[#2a7e78] text-white px-8 py-3.5 rounded-xl font-bold text-[17px] hover:bg-[#216560] transition-all shadow-[0_10px_25px_rgba(42,126,120,0.3)] flex items-center gap-2 group"
-                        >
-                            Get Started for Free
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                        <button className="text-gray-900 font-bold text-[17px] hover:underline underline-offset-4 decoration-2">
-                            Learn More
-                        </button>
-                    </div>
+                    <button className="bg-[#A388FF] text-white px-9 py-5 rounded-2xl font-bold text-lg hover:bg-[#9171FF] transition-all shadow-[0_12px_40px_rgba(163,136,255,0.3)] flex items-center gap-3 group">
+                        Get Early Access <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
                 </div>
 
-                {/* Right Content - Takes up 5 cols - Login Card */}
-                <div className="col-span-5 flex justify-end">
-                    <div className="w-full max-w-[420px] bg-white rounded-[40px] p-10 shadow-[0_40px_80px_rgba(0,0,0,0.12)] border border-white/20">
-                        <h3 className="text-gray-900 text-[28px] font-bold text-center mb-10">Welcome Back</h3>
+                <div className="w-[400px] bg-white/95 backdrop-blur-xl rounded-[32px] p-8 shadow-[0_32px_80px_rgba(0,0,0,0.2)] border border-white relative overflow-hidden flex-shrink-0">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#A388FF]/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
 
-                        <div className="space-y-4">
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2a7e78] transition-colors">
-                                    <Mail size={18} />
+                    <div className="relative">
+                        <h2 className="text-2xl font-black text-gray-900 mb-1">{isSignup ? 'Join AURA' : 'Welcome Back'}</h2>
+                        <p className="text-gray-500 text-xs font-semibold mb-6">
+                            {isSignup ? "Start tracking your connections today." : "Unlock your social potential with AI."}
+                        </p>
+
+                        {error && (
+                            <div className="mb-3 p-2 bg-rose-50 text-rose-500 text-[11px] rounded-xl border border-rose-100 font-bold">
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="space-y-3">
+                            {isSignup && (
+                                <div className="relative">
+                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                    <input
+                                        type="text"
+                                        placeholder="Username"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 pl-11 pr-4 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A388FF]/10 focus:border-[#A388FF] transition-all"
+                                    />
                                 </div>
+                            )}
+                            <div className="relative">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <input
                                     type="email"
                                     placeholder="Email Address"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 pl-12 pr-4 font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2a7e78]/10 focus:border-[#2a7e78] transition-all"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 pl-11 pr-4 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A388FF]/10 focus:border-[#A388FF] transition-all"
                                 />
                             </div>
-
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2a7e78] transition-colors">
-                                    <Lock size={18} />
-                                </div>
+                            <div className="relative">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <input
                                     type="password"
                                     placeholder="Password"
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 pl-12 pr-12 font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2a7e78]/10 focus:border-[#2a7e78] transition-all"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 pl-11 pr-4 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A388FF]/10 focus:border-[#A388FF] transition-all"
                                 />
-                                <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                    <EyeOff size={18} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center justify-between px-1">
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[#2a7e78] focus:ring-[#2a7e78]" />
-                                    <span className="text-gray-500 font-medium text-xs group-hover:text-gray-700 transition-colors">[Remember Me]</span>
-                                </label>
-                                <button className="text-[#2a7e78] font-bold text-xs hover:underline underline-offset-2">
-                                    Forgot Password??
+                                <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                    <EyeOff size={16} />
                                 </button>
                             </div>
 
                             <button
-                                onClick={handleLogin}
-                                className="w-full bg-[#2a7e78] text-white py-4 rounded-2xl font-bold text-[17px] hover:bg-[#216560] transition-all shadow-[0_8px_20px_rgba(42,126,120,0.2)] block text-center mt-2 tracking-wide"
+                                onClick={handleSubmit}
+                                className="w-full bg-[#A388FF] text-white py-3.5 rounded-xl font-bold text-[14px] hover:bg-[#9171FF] transition-all shadow-[0_8px_15px_rgba(163,136,255,0.2)] block text-center mt-1 tracking-widest uppercase"
                             >
-                                LOG IN
+                                {isSignup ? 'Create Account' : 'Log In'}
                             </button>
 
-                            <div className="relative py-4 flex items-center justify-center">
+                            <div className="relative py-2 flex items-center justify-center">
                                 <div className="absolute inset-0 flex items-center">
                                     <div className="w-full border-t border-gray-100"></div>
                                 </div>
-                                <span className="relative bg-white px-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">Or continue with:</span>
+                                <span className="relative px-3 bg-white text-gray-400 text-[9px] font-black tracking-[0.2em] uppercase">OR</span>
                             </div>
 
-                            <button className="w-full border border-gray-100 rounded-2xl py-3 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all shadow-sm">
-                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-                                <span className="text-gray-700 font-bold text-sm">Sign in with Google</span>
-                            </button>
+                            <div className="flex justify-center scale-95 origin-center">
+                                <GoogleLogin
+                                    onSuccess={handleGoogleSuccess}
+                                    onError={() => setError("Google Login Failed")}
+                                    useOneTap
+                                    shape="circle"
+                                    width="100%"
+                                />
+                            </div>
 
-                            <button className="w-full border border-gray-100 rounded-2xl py-3 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all shadow-sm">
-                                <img src="https://www.svgrepo.com/show/303243/microsoft-icon-logo.svg" alt="Microsoft" className="w-5 h-5 rounded-sm" />
-                                <span className="text-gray-700 font-bold text-sm">Sign in with Microsoft</span>
-                            </button>
-
-                            <p className="text-center text-gray-500 font-semibold text-xs mt-4">
-                                Don't have an account? <button className="text-[#2a7e78] font-bold hover:underline">Sign Up</button>
+                            <p className="text-center text-gray-500 text-[11px] font-bold mt-4">
+                                {isSignup ? 'Already have an account?' : "Don't have an account?"} {' '}
+                                <button
+                                    onClick={() => setIsSignup(!isSignup)}
+                                    className="text-[#A388FF] font-black hover:underline underline-offset-2"
+                                >
+                                    {isSignup ? 'Log In' : 'Sign Up'}
+                                </button>
                             </p>
                         </div>
                     </div>
                 </div>
             </main>
-
-            {/* Decorative Blur and Nodes */}
-            <div className="absolute bottom-[10%] left-[40%] w-32 h-32 bg-amber-400/20 rounded-full blur-[80px] pointer-events-none"></div>
-            <div className="absolute top-[40%] right-[5%] w-40 h-40 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
         </div>
     );
 }

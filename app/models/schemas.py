@@ -95,3 +95,38 @@ class PipelineRun(BaseModel):
     trigger: str
     duration_seconds: Optional[float]
     error: Optional[str]
+
+
+# ----------------------------
+# AUTHENTICATION
+# ----------------------------
+
+class User(BaseModel):
+    id: str = Field(..., alias="_id")
+    email: str
+    username: str
+    full_name: Optional[str] = None
+    avatar: Optional[str] = None
+    hashed_password: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    username: str
+    full_name: Optional[str] = None
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class GoogleLoginRequest(BaseModel):
+    token: str

@@ -6,13 +6,14 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import contacts, pipeline, actions, ingest, n8n
+from app.api import contacts, pipeline, actions, ingest, n8n, auth
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.core.database import (
     messages_collection,
     contacts_collection,
     actions_collection,
-    pipeline_runs_collection
+    pipeline_runs_collection,
+    users_collection
 )
 
 
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI):
         await actions_collection.create_index("contact_id")
         await actions_collection.create_index("status")
         await pipeline_runs_collection.create_index("run_id")
+        await users_collection.create_index("email", unique=True)
         print("[DATABASE] MongoDB indexes created successfully")
     except Exception as e:
         print(f"[DATABASE] Warning: Could not create indexes: {e}")
@@ -56,6 +58,7 @@ app.include_router(pipeline.router, prefix="/api/pipeline", tags=["Pipeline"])
 app.include_router(actions.router,  prefix="/api/actions",  tags=["Actions"])
 app.include_router(ingest.router,   prefix="/api/ingest",   tags=["Ingest"])
 app.include_router(n8n.router,      prefix="/api/n8n",      tags=["n8n Integrations"])
+app.include_router(auth.router, tags=["Authentication"])
 
 @app.get("/")
 def root():

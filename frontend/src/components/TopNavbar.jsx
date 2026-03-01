@@ -2,10 +2,12 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Bell } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function TopNavbar() {
-    const { user } = useUser();
+    const { user, loading } = useUser();
     const location = useLocation();
+    const navigate = useNavigate();
     const title = location.pathname.includes('/relationships') ? 'Relationships' : 'Dashboard';
 
     return (
@@ -26,13 +28,21 @@ export default function TopNavbar() {
                     <Bell size={18} />
                 </button>
 
-                <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-sm cursor-pointer ml-1">
-                    <img
-                        src={user.avatar}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                    />
-                </div>
+                {loading ? (
+                    <div className="w-11 h-11 rounded-full bg-gray-100 animate-pulse ml-1" />
+                ) : user ? (
+                    <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-sm cursor-pointer ml-1 hover:scale-105 transition-transform" onClick={() => navigate('/settings')}>
+                        <img
+                            src={user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop"}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                ) : (
+                    <Link to="/" className="text-sm font-bold text-[#7c5ff4] px-4 py-2 hover:bg-[#7c5ff4]/5 rounded-xl transition-colors">
+                        Log In
+                    </Link>
+                )}
             </div>
         </header>
     );
